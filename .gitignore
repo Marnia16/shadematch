@@ -1,42 +1,24 @@
-# Dependencies
+# Node
 node_modules/
-venv/
-.venv/
-env/
+npm-debug.log*
 
-# Build outputs
-dist/
-build/
-*.egg-info/
-
-# Environment files and sensitive secrets (never commit real credentials)
+# Environment variables
 .env
 .env.local
 .env.*.local
-*.pem
-serviceAccountKey*.json
-firebase-adminsdk*.json
 
-# Python bytecode & cache
+# Python
+venv/
+.venv/
 __pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.coverage
-htmlcov/
+*.pyc
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS specific files
+# macOS
 .DS_Store
-Thumbs.db
 
-# IDE & Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
+# Build files
+dist/
+build/
+
+# Vercel
+.vercel/
