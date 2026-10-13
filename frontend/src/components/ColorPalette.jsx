@@ -7,7 +7,8 @@ export default function ColorPalette({
   favorites = [],
   onFavoriteToggle,
   onSelectForOutfit,
-  activeDressColor
+  activeDressColor,
+  onTryOn
 }) {
   const [activeTab, setActiveTab] = useState("all");
 
@@ -82,6 +83,7 @@ export default function ColorPalette({
                 onFavoriteToggle={onFavoriteToggle}
                 onSelectForOutfit={onSelectForOutfit}
                 selectedForOutfit={isSelectedInOutfit}
+                onTryOn={onTryOn}
               />
             );
           })}

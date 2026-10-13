@@ -7,7 +7,8 @@ export default function ColorCard({
   onFavoriteToggle,
   isFavorite = false,
   onSelectForOutfit,
-  selectedForOutfit = false
+  selectedForOutfit = false,
+  onTryOn
 }) {
   const [copied, setCopied] = useState(false);
   const [showEnlarged, setShowEnlarged] = useState(false);
@@ -30,6 +31,13 @@ export default function ColorCard({
     e.stopPropagation();
     if (onFavoriteToggle) {
       onFavoriteToggle(color);
+    }
+  };
+
+  const handleTryOn = (e) => {
+    e.stopPropagation();
+    if (onTryOn) {
+      onTryOn(color);
     }
   };
 
@@ -119,6 +127,18 @@ export default function ColorCard({
             <p className="text-xs text-[#7E6553] mt-1 line-clamp-1">{mood}</p>
           </div>
 
+          {/* Try This Look Action Button */}
+          {onTryOn && (
+            <button
+              type="button"
+              onClick={handleTryOn}
+              className="w-full py-2 px-3 rounded-xl bg-[#FAF8F5] hover:bg-[#121212] text-[#121212] hover:text-[#D4AF37] border border-[#E8DFD5] hover:border-[#121212] text-xs font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm group/btn"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] transition-transform group-hover/btn:scale-110" />
+              <span>✨ Try This Look</span>
+            </button>
+          )}
+
           {/* Action Row */}
           <div className="pt-2 border-t border-[#F4EFEA] flex items-center justify-between">
             <button
@@ -197,21 +217,34 @@ export default function ColorCard({
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              {onTryOn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEnlarged(false);
+                    onTryOn(color);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold rounded-full bg-[#121212] text-[#D4AF37] border border-[#D4AF37]/50 hover:bg-[#2A2A2A] flex items-center gap-1.5 shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>✨ Try This Look</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleCopy}
                 className="px-4 py-2 text-xs font-semibold rounded-full bg-[#FAF8F5] border border-[#D5C4B4] text-[#121212] flex items-center gap-1.5"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "Copied to Clipboard" : "Copy HEX"}
+                {copied ? "Copied" : "Copy HEX"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowEnlarged(false)}
-                className="px-5 py-2 text-xs font-semibold rounded-full bg-[#121212] text-white"
+                className="px-4 py-2 text-xs font-semibold rounded-full bg-stone-200 text-[#121212] hover:bg-stone-300"
               >
-                Close Preview
+                Close
               </button>
             </div>
           </div>

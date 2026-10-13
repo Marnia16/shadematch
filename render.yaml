@@ -11,3 +11,9 @@ services:
         value: 3.11.9
       - key: FRONTEND_URL
         sync: false
+      - key: OOTD_GRADIO_SPACE
+        value: levihsu/OOTDiffusion
+      - key: HF_TOKEN
+        sync: false
+      - key: OOTD_WORKER_URL
+        sync: false

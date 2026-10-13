@@ -9,14 +9,22 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+# Safely load local .env if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from routes.health import router as health_router
 from routes.analysis import router as analysis_router
 from routes.recommendations import router as recommendations_router
+from routes.tryon import router as tryon_router
 
 app = FastAPI(
     title="ShadeMatch API",
-    description="Personalized fashion color recommendation backend powered by OpenCV & Scikit-Learn.",
-    version="1.0.0",
+    description="Personalized fashion color recommendation and AI Virtual Try-On backend powered by OpenCV & Scikit-Learn.",
+    version="1.1.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -60,6 +68,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api")
 app.include_router(analysis_router, prefix="/api")
 app.include_router(recommendations_router, prefix="/api")
+app.include_router(tryon_router, prefix="/api")
 
 
 @app.get("/")
@@ -72,6 +81,8 @@ def root():
             "POST /api/analyze",
             "POST /api/analyze-json",
             "POST /api/recommend",
+            "POST /api/try-on",
+            "POST /api/try-on-json",
             "GET /api/health"
         ]
     }

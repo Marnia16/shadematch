@@ -5,6 +5,7 @@ import { useAnalysis } from "../context/AnalysisContext";
 import RecommendationCard from "../components/RecommendationCard";
 import ColorPalette from "../components/ColorPalette";
 import OutfitBuilder from "../components/OutfitBuilder";
+import TryOnModal from "../components/TryOnModal";
 import { saveLook, getSavedLooks } from "../services/firebase";
 
 export default function Results() {
@@ -14,13 +15,19 @@ export default function Results() {
     selectedDress,
     selectedOccasion,
     updateDressOrOccasion,
-    imagePreviewUrl
+    imagePreviewUrl,
+    imageFile,
+    imageBase64
   } = useAnalysis();
 
   const [activeDress, setActiveDress] = useState(selectedDress || "Saree");
   const [activeOccasion, setActiveOccasion] = useState(selectedOccasion || "Wedding");
   const [favorites, setFavorites] = useState([]);
   const [activeDressColor, setActiveDressColor] = useState(null);
+
+  // AI Virtual Try-On Modal State
+  const [tryOnOpen, setTryOnOpen] = useState(false);
+  const [tryOnColor, setTryOnColor] = useState(null);
 
   // Load existing favorites on mount
   useEffect(() => {
@@ -119,6 +126,21 @@ export default function Results() {
     }
   };
 
+  const handleOpenTryOn = (color) => {
+    setTryOnColor(color);
+    setTryOnOpen(true);
+  };
+
+  const handleNextTryOnColor = () => {
+    if (!data?.recommended_colors?.length) return;
+    const colors = data.recommended_colors;
+    const currentIndex = colors.findIndex(
+      c => c.hex?.toLowerCase() === tryOnColor?.hex?.toLowerCase()
+    );
+    const nextIndex = (currentIndex + 1) % colors.length;
+    setTryOnColor(colors[nextIndex]);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-16">
       {/* Top Bar Navigation & Actions */}
@@ -198,7 +220,7 @@ export default function Results() {
               Recommended Colors
             </h2>
             <p className="text-xs text-[#7E6553] mt-0.5">
-              Click any color to test it in the outfit coordinator, or click the heart to save it.
+              Click any color to test it in the outfit coordinator, or click <strong>✨ Try This Look</strong> to see yourself wearing it.
             </p>
           </div>
         </div>
@@ -209,6 +231,7 @@ export default function Results() {
           onFavoriteToggle={handleFavoriteToggle}
           onSelectForOutfit={handleSelectColorForOutfit}
           activeDressColor={activeDressColor}
+          onTryOn={handleOpenTryOn}
         />
       </section>
 
@@ -223,6 +246,20 @@ export default function Results() {
           onSaved={(newLook) => setFavorites(prev => [newLook, ...prev])}
         />
       </section>
+
+      {/* Virtual Try-On Modal */}
+      <TryOnModal
+        isOpen={tryOnOpen}
+        onClose={() => setTryOnOpen(false)}
+        color={tryOnColor}
+        dressType={activeDress}
+        occasion={activeOccasion}
+        imageFile={imageFile}
+        imageBase64={imageBase64}
+        imagePreviewUrl={imagePreviewUrl}
+        recommendedColors={data.recommended_colors}
+        onSelectAnotherColor={handleNextTryOnColor}
+      />
     </div>
   );
 }

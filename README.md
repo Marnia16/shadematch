@@ -1,8 +1,8 @@
-# ShadeMatch — Haute Fashion Colorimetry Studio
+# ShadeMatch — Haute Fashion Colorimetry & AI Virtual Try-On Studio
 
-**ShadeMatch** is a personalized fashion color recommendation web application built with a modern **React** frontend and supported by a **FastAPI**, **OpenCV**, and **scikit-learn** backend.
+**ShadeMatch** is a personalized fashion color recommendation and AI Virtual Try-On web application built with a modern **React** frontend and supported by a **FastAPI**, **OpenCV**, **scikit-learn**, and generative **VTON** backend.
 
-The application analyzes a person's photo (via file upload or live camera viewfinder), estimates their skin-tone category and undertone using dermatological colorimetry (Individual Typology Angle - ITA and CIELAB space), and recommends complementary dress colors and curated 4-piece outfit combinations tailored to their selected silhouette and occasion.
+The application analyzes a person's photo (via file upload or live camera viewfinder), estimates their skin-tone category and undertone using dermatological colorimetry (Individual Typology Angle - ITA and CIELAB space), recommends complementary dress colors and curated 4-piece outfit combinations tailored to their selected silhouette and occasion, and lets users **virtually try on** their recommended looks with a single click (**"✨ Try This Look"**).
 
 ---
 
@@ -14,12 +14,15 @@ User
 Vercel-hosted React Application (https://YOUR-APP.vercel.app)
   ↓ (VITE_API_URL)
 Public FastAPI Service on Render (https://YOUR-API.onrender.com)
-  ↓ (FRONTEND_URL CORS)
-OpenCV + ML Processing
+  ├── OpenCV + Skin Tone ML Analysis
+  ├── Color & Outfit Recommendation Engine
+  └── Generative AI Virtual Try-On (Open-Source OOTDiffusion)
+        ├── Data-Driven Real Garment Photography Catalog
+        └── Latent Diffusion Dress Synthesis
   ↓
 Structured JSON Response
   ↓
-React UI / Lookbook / Outfit Builder
+React UI / Lookbook / Outfit Builder / ✨ AI Virtual Try-On Modal
 ```
 
 ---
@@ -30,17 +33,21 @@ React UI / Lookbook / Outfit Builder
 - **Framework**: React 18 with Vite
 - **Styling**: Tailwind CSS with custom editorial luxury design system
 - **Routing**: React Router DOM (with `vercel.json` SPA rewrite rules)
-- **Animations**: Framer Motion
+- **Animations**: Framer Motion (biometric scan beams, drawer transitions, modal overlays)
 - **Icons**: Lucide React
 - **Celebratory Effects**: Canvas Confetti
+- **Components**: Interactive swatch palettes, live camera HUD, and high-fashion `TryOnModal` with side-by-side comparison, color switching, and look bookmarking
 - **Services**: Dedicated API client (`src/services/api.js`) and Firebase Auth / Firestore service (`src/services/firebase.js`) with built-in persistent LocalStorage fallback
 
-### Backend — Supporting (FastAPI + CV/ML)
+### Backend — Supporting (FastAPI + CV/ML + Generative VTON)
 - **API Framework**: FastAPI & Uvicorn (configured for dynamic `$PORT` and CORS)
 - **Computer Vision**: OpenCV Headless (`opencv-python-headless` for cloud Linux compatibility)
 - **Scientific Colorimetry**: CIELAB $L^*, a^*, b^*$, Individual Typology Angle (ITA), and undertone chromatic ratio
 - **Machine Learning**: Extensible `SkinTonePredictor` interface with 7-dimensional feature vectors ($L^*, a^*, b^*, \text{ITA}, H, S, V$), ready for drop-in trained scikit-learn models (`RandomForestClassifier`, `SVC`, etc.)
 - **Recommendation Engine**: Multi-dimensional rule matrix mapping `(tone, undertone, dress_type, occasion)` to power colors, neutrals, statement accents, and 4-piece outfit coordinates
+- **AI Virtual Try-On Service**: Open-source generative AI Virtual Try-On integration via **OOTDiffusion** (`https://github.com/levihsu/OOTDiffusion`), featuring ephemeral in-memory processing and remote GPU worker connection
+- **Garment Asset Catalog**: Data-driven catalog of real reference product photography (`assets/garments/`), mapping silhouettes and colors to real ghost-mannequin and flat-lay studio assets
+- **Image Processing**: Headless Pillow (`PIL`) and OpenCV for in-memory buffer transformations
 
 ---
 
@@ -69,15 +76,16 @@ shadematch/
 │       │   ├── DressSelector.jsx   # 8 Silhouette cards (Saree, Gown, Shirt, etc.)
 │       │   ├── OccasionSelector.jsx# 7 Occasion cards (Wedding, Office, Party, etc.)
 │       │   ├── LoadingAnalysis.jsx # 4-stage biometric scanning HUD
-│       │   ├── ColorCard.jsx       # Large swatch, HEX copy, contrast, favorites
+│       │   ├── ColorCard.jsx       # Large swatch, HEX copy, contrast, "✨ Try This Look"
 │       │   ├── ColorPalette.jsx    # Categorized palettes (Power, Neutrals, Accents)
+│       │   ├── TryOnModal.jsx      # High-fashion virtual try-on modal & side-by-side preview
 │       │   ├── OutfitBuilder.jsx   # 4-piece interactive look builder (Dress, Acc, Shoes, Bag)
 │       │   ├── RecommendationCard.jsx # Estimated complexion & tailored styling advice
 │       │   └── AuthModal.jsx       # Firebase Auth / Guest Demo modal
 │       ├── pages/
 │       │   ├── Home.jsx            # Editorial landing page with hero & how-it-works
 │       │   ├── Analyze.jsx         # Studio analysis wizard
-│       │   ├── Results.jsx         # Personalized palette showcase & outfit builder
+│       │   ├── Results.jsx         # Personalized palette showcase, try-on & outfit builder
 │       │   ├── Favorites.jsx       # "My Looks" saved ensemble library
 │       │   ├── Explore.jsx         # Seasonal color theory & undertone guide
 │       │   └── Profile.jsx         # User preferences, saved count, and settings
@@ -85,7 +93,7 @@ shadematch/
 │       │   ├── AuthContext.jsx
 │       │   └── AnalysisContext.jsx
 │       ├── services/
-│       │   ├── api.js              # FastAPI REST client (uses VITE_API_URL)
+│       │   ├── api.js              # FastAPI REST client (uses VITE_API_URL, try-on methods)
 │       │   └── firebase.js         # Firebase Auth & Firestore with LocalStorage sync
 │       ├── data/
 │       │   ├── dressTypes.js
@@ -96,24 +104,31 @@ shadematch/
 │           └── imageHelpers.js     # Client-side image validation & lighting check
 │
 ├── backend/
-│   ├── main.py                     # FastAPI entrypoint, dynamic CORS & $PORT handling
-│   ├── requirements.txt            # Headless Python dependencies (opencv-python-headless)
-│   ├── test_backend.py             # Internal verification test suite
-│   ├── .env.example                # Example backend environment variables
+│   ├── main.py                     # FastAPI entrypoint, dynamic CORS & router mounting
+│   ├── requirements.txt            # Headless Python dependencies (opencv-python-headless, Pillow)
+│   ├── test_backend.py             # Comprehensive test suite covering ML, VTON & APIs
+│   ├── .env.example                # Example backend environment variables (including VTON)
 │   ├── .gitignore                  # Backend git exclusion rules
+│   ├── assets/
+│   │   └── garments/               # Custom garment cutouts with dynamic fallback
 │   ├── routes/
-│   │   ├── health.py               # GET /api/health
+│   │   ├── health.py               # GET /api/health (reports VTON engine readiness)
 │   │   ├── analysis.py             # POST /api/analyze & POST /api/analyze-json
-│   │   └── recommendations.py      # POST /api/recommend
+│   │   ├── recommendations.py      # POST /api/recommend
+│   │   └── tryon.py                # POST /api/try-on & POST /api/try-on-json
 │   ├── services/
 │   │   ├── image_processor.py      # OpenCV face detection & skin ROI isolation
 │   │   ├── skin_tone_analyzer.py   # ITA angle & CIELAB metrics
-│   │   └── recommendation_engine.py# Contextual fashion recommendation engine
+│   │   ├── recommendation_engine.py# Contextual fashion recommendation engine
+│   │   ├── garment_catalog.py      # Real reference photography catalog (assets/garments/)
+│   │   └── virtual_tryon_service.py# Open-source VTON provider (OOTDiffusion)
 │   ├── models/
 │   │   └── predictor.py            # ML predictor interface (checks SKIN_TONE_MODEL_PATH)
 │   └── utils/
 │       └── image_utils.py          # Image decoding & quality evaluation
 │
+├── docs/
+│   └── VTON_SETUP.md               # Practical setup guide for free GPU inference
 ├── render.yaml                     # Render Blueprint specification for Web Service
 ├── .gitignore                      # Root git exclusion rules
 └── README.md
@@ -253,10 +268,48 @@ Open `http://localhost:5173` in your browser. In local development mode (`npm ru
 
 | Method | Endpoint | Description | Request Body |
 |---|---|---|---|
-| `GET` | `/api/health` | Health check and capabilities | None |
+| `GET` | `/api/health` | Health check & VTON readiness report | None |
 | `POST` | `/api/analyze` | Full image analysis + recommendations | `multipart/form-data` (`image`, `dress_type`, `occasion`) |
 | `POST` | `/api/analyze-json` | Base64 canvas capture analysis | `application/json` (`image_base64`, `dress_type`, `occasion`) |
 | `POST` | `/api/recommend` | Dynamic recommendation re-query | `application/json` (`skin_tone`, `undertone`, `dress_type`, `occasion`) |
+| `POST` | `/api/try-on` | AI Virtual Try-On (multipart) | `multipart/form-data` (`image`, `dress_type`, `color_name`, `color_hex`) |
+| `POST` | `/api/try-on-json` | AI Virtual Try-On (Base64) | `application/json` (`image_base64`, `dress_type`, `color_name`, `color_hex`) |
+
+---
+
+## AI Virtual Try-On (VTON) Engine — OOTDiffusion
+
+ShadeMatch integrates open-source generative AI virtual try-on powered by **[OOTDiffusion](https://github.com/levihsu/OOTDiffusion)**, bringing realistic garment drape, texture synthesis, and lighting integration into the fashion recommendation flow without paid APIs or closed commercial models.
+
+### Architecture
+```
+User clicks "✨ Try This Look"
+       ↓
+React TryOnModal opens with loading progress
+       ↓
+POST /api/try-on (image + dress_type + color_name + color_hex)
+       ↓
+Backend Garment Catalog (`garment_catalog.py`)
+  ├── Checks `backend/assets/garments/` for curated real product photography
+  └── If asset is not found, returns honest status (GARMENT_ASSET_UNAVAILABLE)
+       ↓
+OOTDiffusion Provider (`virtual_tryon_service.py`)
+  ├── Detects GPU environment (Local CUDA or OOTD_WORKER_URL)
+  ├── If no CUDA GPU available (e.g. Mac M4), returns VTON_MODEL_UNAVAILABLE
+  └── If GPU worker available, runs latent diffusion inference
+       ↓
+Ephemeral Response returned to React UI
+  └── Side-by-side original portrait vs. AI-styled dress
+```
+
+### Key Principles & Guarantees
+- **Zero Paid APIs / Zero API Keys**: No FASHN, no paid credits, no API key requirements.
+- **Zero Fake Overlays**: All synthetic 2D polygon drawing, PIL template rendering, and cartoon overlays are completely removed. If a GPU environment is not available or an asset is missing, the app provides a clear, honest error instead of drawing fake shapes.
+- **Strict Ephemeral Privacy**: User portraits are processed purely in-memory as ephemeral byte streams and converted to transient base64 payloads for inference. Portraits are **never** persisted to disk or database.
+
+### Running Real VTON for Free (Google Colab T4 GPU)
+Because Apple Silicon Macs (including MacBook Air M4) do not have NVIDIA CUDA GPUs, local inference cannot execute on macOS. For a 100% free GPU route using Google Colab's free T4 GPU, see the practical setup guide in:
+👉 **[`docs/VTON_SETUP.md`](file:///Users/trini/Documents/shadematch/docs/VTON_SETUP.md)**
 
 ---
 
@@ -283,8 +336,9 @@ To replace the baseline colorimetric engine with a trained scikit-learn model:
 - [x] **Frontend builds successfully**: `npm run build` completes with 0 errors and generates optimized production bundle in `dist/`.
 - [x] **Backend starts successfully**: Production entry point `uvicorn main:app --host 0.0.0.0 --port $PORT` is tested and verified.
 - [x] **CORS configured**: Secure explicit origins via `FRONTEND_URL`, supporting Vercel preview domains (`allow_origin_regex=r"https://.*\.vercel\.app"`) with zero wildcards.
-- [x] **Environment variables configured**: `VITE_API_URL` for frontend; `FRONTEND_URL`, `PORT`, `HOST`, and optional `SKIN_TONE_MODEL_PATH` for backend.
-- [x] **API endpoint works**: `/api/health`, `/api/analyze`, and `/api/recommend` pass all integration tests.
+- [x] **Environment variables configured**: `VITE_API_URL` for frontend; `FRONTEND_URL`, `PORT`, `HOST`, and optional `SKIN_TONE_MODEL_PATH`, `OOTD_WORKER_URL` for backend.
+- [x] **API endpoints verified**: `/api/health`, `/api/analyze`, `/api/recommend`, `/api/try-on`, and `/api/try-on-json` pass all integration tests.
+- [x] **AI Virtual Try-On verified**: Try-On modal operates seamlessly across Generating, Success, and Error states with side-by-side visualization.
 - [x] **Image upload works**: Handles both multipart/form-data file uploads and direct webcam base64 canvas frames.
 - [x] **ML/OpenCV processing works**: `opencv-python-headless` ensures headless Linux cloud compatibility without requiring X11/libGL dependencies.
 - [x] **React receives API response**: Data contract matches exact frontend context expectations and provides graceful fallback if server is offline.
@@ -293,3 +347,4 @@ To replace the baseline colorimetric engine with a trained scikit-learn model:
 - [x] **React Router works after deployment**: `frontend/vercel.json` provides SPA rewrites so direct navigation to `/analyze`, `/results`, `/favorites`, `/profile`, and `/explore` never 404s.
 - [x] **No localhost URLs remain in production code**: All API requests resolve through `import.meta.env.VITE_API_URL` with automatic trailing-slash trimming.
 - [x] **No private credentials are committed**: Comprehensive `.gitignore` protects `.env*`, keys, virtual environments, and bytecode.
+

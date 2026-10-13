@@ -5,7 +5,7 @@
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "http://localhost:8000" : "")
+  (import.meta.env.DEV ? "http://localhost:8000" : "https://shadematch-backend-rqvn.onrender.com")
 ).replace(/\/$/, "");
 
 /**
@@ -116,6 +116,74 @@ export async function fetchUpdatedRecommendations(skinTone, undertone, dressType
   } catch (error) {
     console.warn("Using local recommendation fallback:", error);
     return generateFallbackRecommendations(skinTone, undertone, dressType, occasion);
+  }
+}
+
+/**
+ * Executes AI Virtual Try-On via /api/try-on or /api/try-on-json
+ */
+export async function executeVirtualTryOn({
+  imageFile,
+  imageBase64,
+  colorName,
+  colorHex,
+  dressType = "Casual Wear",
+  occasion = "Casual"
+}) {
+  try {
+    let res;
+
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      formData.append("dress_type", dressType);
+      formData.append("color_name", colorName);
+      formData.append("color_hex", colorHex);
+      formData.append("occasion", occasion);
+
+      res = await fetch(`${API_BASE_URL}/api/try-on`, {
+        method: "POST",
+        body: formData,
+      });
+    } else if (imageBase64) {
+      res = await fetch(`${API_BASE_URL}/api/try-on-json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          image_base64: imageBase64,
+          dress_type: dressType,
+          color_name: colorName,
+          color_hex: colorHex,
+          occasion: occasion
+        })
+      });
+    } else {
+      throw new Error("No portrait image available for Virtual Try-On.");
+    }
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      return {
+        success: false,
+        configured: data?.configured ?? true,
+        code: data?.code || "SERVER_ERROR",
+        message: data?.detail || data?.message || `Server error ${res.status}`,
+        available_garments: data?.available_garments || []
+      };
+    }
+
+    return data;
+  } catch (err) {
+    console.warn("Virtual Try-On API error:", err);
+    return {
+      success: false,
+      configured: true,
+      code: "NETWORK_ERROR",
+      message: err.message || "Could not generate try-on look. Please try again."
+    };
   }
 }
 
